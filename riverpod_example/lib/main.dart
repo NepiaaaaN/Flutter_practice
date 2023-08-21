@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'mydata.dart';
 
 // 1-1. グローバル変数にProviderを定義する
@@ -44,33 +44,34 @@ class _MyHomePageState extends State<MyHomePage> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: Text(widget.title),
       ),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: <Widget>[
-          // 2-1. Text用にConsumerを使う
-          Consumer(builder: ((context, ref, child) {
-            return Text(
-              // 2-2. refを用いてstateの値を取り出す
-              // ref.watchにプロバイダーを渡すとMyDataのstateの値が取得出来るため、文字列に加工して表示する
-              ref.watch(_mydataProvider).toStringAsFixed(2),
-              style: const TextStyle(fontSize: 100),
-            );
-          })),
-          // 3-1. Slider用にConsumerを使う
-          // データの受取部分を簡素に実装するために、Consumerを利用する
-          Consumer(builder: (context, ref, child) {
-            return Slider(
-              // 3-2. refを用いてstateの値を取り出す
-              // ref.watchにプロバイダーを渡すとMyDataのstateの値が取得できるため、スライダーの値にする
-              value: ref.watch(_mydataProvider),
-              // 3-3. changeStateで状態を変える
-              // ref.readにプロバイダーのnotifierを渡すとMydataが取得できるため、changeStateメソッドを呼んで値を更新する
-              onChanged: (value) =>
-                  ref.read(_mydataProvider.notifier).changeState(value),
-            );
-          })
-        ],
-      ),
+      body: const MyContents(),
+    );
+  }
+}
+
+class MyContents extends HookConsumerWidget {
+  const MyContents({Key? key}) : super(key: key);
+
+  // HookConsumerWidgetを使うことでbuildメソッドでrefが使えるようになる
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    // ref.watchでプロバイダーにアクセスしスライダー値を管理
+    double slideValue = ref.watch(_mydataProvider);
+
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        // slideValueでstate(カウンタ値)を取得し、使えるので、Consumerが不要になる
+        Text(
+          slideValue.toStringAsFixed(2),
+          style: const TextStyle(fontSize: 100),
+        ),
+        Slider(
+          value: slideValue,
+          onChanged: (value) =>
+              ref.read(_mydataProvider.notifier).changeState(value),
+        )
+      ],
     );
   }
 }
